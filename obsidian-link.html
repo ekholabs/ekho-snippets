@@ -37,27 +37,40 @@
                 EKHO Snippets
             </a>
             <h1 class="text-3xl font-bold text-olive-700 mb-2">Obsidian Link Converter</h1>
-            <p class="text-olive-600">Convert Obsidian URI links into clickable HTML links.</p>
+            <p class="text-olive-600">Extract and convert Obsidian URI links from text or messages.</p>
         </header>
 
         <div class="bg-white rounded-xl shadow-md p-6 mb-6">
-            <p class="text-sm text-olive-500 mb-4">Paste your Obsidian URI links below (e.g., <code class="bg-olive-100 px-1 rounded">obsidian://open?vault=MyVault&file=Note</code>).</p>
+            <div class="flex gap-4 mb-4" role="tablist">
+                <button 
+                    onclick="switchMode('extract')" 
+                    id="tab-extract"
+                    class="tab-button active bg-olive-100 text-olive-700 px-4 py-2 rounded-lg font-medium transition-colors"
+                >Extract Links</button>
+                <button 
+                    onclick="switchMode('convert')" 
+                    id="tab-convert"
+                    class="tab-button text-olive-600 px-4 py-2 rounded-lg font-medium hover:bg-olive-50 transition-colors"
+                >Convert Only</button>
+            </div>
+            <p id="helper-text" class="text-sm text-olive-500 mb-4">Paste any text containing Obsidian links. The tool will extract and convert them automatically.</p>
             <textarea 
                 id="input" 
-                placeholder="Paste Obsidian links here..."
+                placeholder="Paste text with Obsidian links here..."
                 class="w-full h-32 p-3 border border-olive-200 rounded-lg focus:ring-2 focus:ring-olive-500 focus:border-olive-500 outline-none transition-all text-sm font-mono"
             ></textarea>
             
             <button 
-                onclick="convertLinks()"
+                onclick="processLinks()"
+                id="process-btn"
                 class="mt-4 w-full bg-olive-600 hover:bg-olive-700 text-white font-medium py-3 px-4 rounded-lg transition-colors shadow-sm hover:shadow-md"
             >
-                Convert to Clickable Links
+                Extract and Convert Links
             </button>
         </div>
 
         <div id="output" class="bg-white rounded-xl shadow-md p-6 min-h-[100px] border border-olive-100">
-            <p class="text-olive-400 text-center">Converted links will appear here...</p>
+            <p class="text-olive-400 text-center">Results will appear here...</p>
         </div>
 
         <footer class="text-center py-8 mt-12 border-t border-olive-200">
@@ -66,21 +79,60 @@
     </div>
 
     <script>
-        function convertLinks() {
+        let currentMode = 'extract';
+
+        function switchMode(mode) {
+            currentMode = mode;
+            
+            document.getElementById('tab-extract').className = mode === 'extract' 
+                ? 'tab-button active bg-olive-100 text-olive-700 px-4 py-2 rounded-lg font-medium transition-colors' 
+                : 'tab-button text-olive-600 px-4 py-2 rounded-lg font-medium hover:bg-olive-50 transition-colors';
+            
+            document.getElementById('tab-convert').className = mode === 'convert' 
+                ? 'tab-button active bg-olive-100 text-olive-700 px-4 py-2 rounded-lg font-medium transition-colors' 
+                : 'tab-button text-olive-600 px-4 py-2 rounded-lg font-medium hover:bg-olive-50 transition-colors';
+
+            const helperText = document.getElementById('helper-text');
+            const processBtn = document.getElementById('process-btn');
+            
+            if (mode === 'extract') {
+                helperText.textContent = 'Paste any text containing Obsidian links. The tool will extract and convert them automatically.';
+                processBtn.textContent = 'Extract and Convert Links';
+            } else {
+                helperText.textContent = 'Paste your Obsidian URI links below (e.g., obsidian://open?vault=MyVault&file=Note).';
+                processBtn.textContent = 'Convert to Clickable Links';
+            }
+        }
+
+        function processLinks() {
             const input = document.getElementById('input').value;
             const output = document.getElementById('output');
 
             if (!input.trim()) {
-                output.innerHTML = '<p class="text-olive-400 text-center">Converted links will appear here...</p>';
+                output.innerHTML = '<p class="text-olive-400 text-center">Results will appear here...</p>';
                 return;
             }
 
-            const converted = input.replace(
-                /(obsidian:\/\/[^\s]+)/g,
-                '<a href="$1" target="_blank" class="text-olive-600 hover:text-olive-800 underline break-all">$1</a>'
-            );
+            const linkRegex = /(obsidian:\/\/[^\s\n\r]+)/g;
+            const links = input.match(linkRegex);
 
-            output.innerHTML = converted || '<p class="text-olive-400 text-center"><em>No Obsidian links found.</em></p>';
+            if (!links || links.length === 0) {
+                output.innerHTML = '<p class="text-olive-400 text-center"><em>No Obsidian links found.</em></p>';
+                return;
+            }
+
+            if (currentMode === 'extract') {
+                const converted = links.map(link => 
+                    '<a href="' + link + '" target="_blank" class="block text-olive-600 hover:text-olive-800 underline break-all py-1">' + link + '</a>'
+                ).join('');
+                output.innerHTML = '<div class="space-y-2">' + converted + '</div>';
+            } else {
+                const converted = input.replace(
+                    linkRegex,
+                    '<a href="$1" target="_blank" class="text-olive-600 hover:text-olive-800 underline break-all">$1</a>'
+                );
+                output.innerHTML = '<div class="whitespace-pre-wrap">' + converted + '</div>';
+            }
         }
     </script>
 </body>
