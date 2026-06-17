@@ -6,45 +6,43 @@
     <title>Obsidian Link Converter - EKHO Snippets</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-50 min-h-screen">
-    <div class="max-w-2xl mx-auto p-6">
+<body class="bg-emerald-50 min-h-screen">
+    <div class="max-w-4xl mx-auto p-6">
         <header class="mb-8">
-            <h1 class="text-3xl font-bold text-indigo-600 mb-2">Obsidian Link Converter</h1>
-            <p class="text-slate-600">Convert Obsidian URI links into clickable HTML links.</p>
+            <a href="index.html" class="inline-flex items-center text-emerald-600 hover:text-emerald-800 transition-colors mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                EKHO Snippets
+            </a>
+            <h1 class="text-3xl font-bold text-emerald-700 mb-2">Obsidian Link Converter</h1>
+            <p class="text-emerald-600">Convert Obsidian URI links into clickable HTML links.</p>
         </header>
 
         <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+            <p class="text-sm text-emerald-500 mb-4">Paste your Obsidian URI links below (e.g., <code class="bg-emerald-100 px-1 rounded">obsidian://open?vault=MyVault&file=Note</code>).</p>
             <textarea 
                 id="input" 
-                placeholder="Paste Obsidian links here... e.g. obsidian://open?vault=MyVault&file=MyNote"
-                class="w-full h-32 p-3 border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-sm font-mono"
+                placeholder="Paste Obsidian links here..."
+                class="w-full h-32 p-3 border border-emerald-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all text-sm font-mono"
             ></textarea>
             
             <button 
                 onclick="convertLinks()"
-                class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-4 rounded-lg transition-colors shadow-sm hover:shadow-md"
+                class="mt-4 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 px-4 rounded-lg transition-colors shadow-sm hover:shadow-md"
             >
                 Convert to Clickable Links
             </button>
         </div>
 
-        <div id="output" class="bg-white rounded-xl shadow-md p-6 min-h-[100px] border border-indigo-100">
-            <p class="text-slate-400 text-center">Converted links will appear here...</p>
+        <div id="output" class="bg-white rounded-xl shadow-md p-6 min-h-[100px] border border-emerald-100">
+            <p class="text-emerald-400 text-center">Converted links will appear here...</p>
         </div>
 
-        <div class="mt-8 text-center">
-            <a href="index.html" class="inline-flex items-center text-indigo-600 hover:text-indigo-800 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                </svg>
-                Back to EKHO Snippets
-            </a>
-        </div>
+        <footer class="text-center py-8 mt-12 border-t border-emerald-200">
+            <p class="text-emerald-400 text-sm">© EKHO Labs</p>
+        </footer>
     </div>
-
-    <footer class="text-center py-8 mt-12">
-        <p class="text-slate-400 text-sm">© EKHO Labs</p>
-    </footer>
 
     <script>
         function convertLinks() {
@@ -52,16 +50,16 @@
             const output = document.getElementById('output');
 
             if (!input.trim()) {
-                output.innerHTML = '<p class="text-slate-400 text-center">Converted links will appear here...</p>';
+                output.innerHTML = '<p class="text-emerald-400 text-center">Converted links will appear here...</p>';
                 return;
             }
 
             const converted = input.replace(
                 /(obsidian:\/\/[^\s]+)/g,
-                '<a href="$1" target="_blank" class="text-indigo-600 hover:text-indigo-800 underline break-all">$1</a>'
+                '<a href="$1" target="_blank" class="text-emerald-600 hover:text-emerald-800 underline break-all">$1</a>'
             );
 
-            output.innerHTML = converted || '<p class="text-slate-400 text-center"><em>No Obsidian links found.</em></p>';
+            output.innerHTML = converted || '<p class="text-emerald-400 text-center"><em>No Obsidian links found.</em></p>';
         }
     </script>
 </body>
