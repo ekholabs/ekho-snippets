@@ -94,10 +94,9 @@
             }
 
             // Support copied links from HTML contexts where `&` may be entity-escaped as `&amp;`.
-            let normalizedQuery = rawQuery;
-            while (normalizedQuery.includes('&amp;')) {
-                normalizedQuery = normalizedQuery.replace(/&amp;/g, '&');
-            }
+            const entityDecoder = document.createElement('textarea');
+            entityDecoder.innerHTML = rawQuery;
+            const normalizedQuery = entityDecoder.value;
             let candidate = null;
 
             if (normalizedQuery.startsWith('obsidian://')) {
@@ -120,12 +119,7 @@
                 return null;
             }
 
-            try {
-                return normalizeObsidianLink(decodeURIComponent(candidate));
-            } catch {
-                console.warn('Malformed URI encoding in query Obsidian link:', candidate);
-                return normalizeObsidianLink(candidate);
-            }
+            return normalizeObsidianLink(candidate);
         }
 
         function normalizeObsidianLink(link) {
@@ -155,6 +149,7 @@
                     ? `obsidian://${parsed.hostname}?${normalizedParams}`
                     : `obsidian://${parsed.hostname}`;
             } catch {
+                console.warn('Malformed URI encoding in query Obsidian link:', link);
                 return link.startsWith('obsidian://') ? link : null;
             }
         }
@@ -167,11 +162,19 @@
             }
 
             const input = document.getElementById('input');
+            if (!input) {
+                return;
+            }
+
             input.value = queryLink;
             switchMode('convert');
             processLinks();
 
             const output = document.getElementById('output');
+            if (!output) {
+                return;
+            }
+
             const notice = document.createElement('div');
             notice.className = REDIRECT_NOTICE_CLASS;
             notice.setAttribute('role', 'status');
