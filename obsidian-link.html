@@ -82,6 +82,8 @@
         let currentMode = 'extract';
         // Delay gives users enough time to understand and cancel auto-redirect if needed.
         const REDIRECT_DELAY_MS = 3000;
+        // Prevent unbounded entity-decoding loops on malformed or hostile query input.
+        const MAX_ENTITY_DECODE_ITERATIONS = 5;
         const REDIRECT_NOTICE_CLASS = 'mt-4 rounded-lg border border-olive-200 bg-olive-50 p-3 text-sm text-olive-700';
 
         function getQueryObsidianLink() {
@@ -95,7 +97,7 @@
 
             // Support copied links from HTML contexts where `&` may be entity-escaped as `&amp;`.
             let normalizedQuery = rawQuery;
-            for (let i = 0; i < 5 && normalizedQuery.includes('&amp;'); i++) {
+            for (let i = 0; i < MAX_ENTITY_DECODE_ITERATIONS && normalizedQuery.includes('&amp;'); i++) {
                 normalizedQuery = normalizedQuery.replaceAll('&amp;', '&');
             }
             let candidate = null;
@@ -164,6 +166,7 @@
 
             const input = document.getElementById('input');
             if (!input) {
+                console.warn('Obsidian link input element not found.');
                 return;
             }
 
@@ -173,6 +176,7 @@
 
             const output = document.getElementById('output');
             if (!output) {
+                console.warn('Obsidian link output element not found.');
                 return;
             }
 
