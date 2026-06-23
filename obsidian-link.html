@@ -80,6 +80,7 @@
 
     <script>
         let currentMode = 'extract';
+        const REDIRECT_DELAY_MS = 200;
 
         function getQueryObsidianLink() {
             const rawQuery = window.location.search.startsWith('?')
@@ -115,6 +116,7 @@
             try {
                 return decodeURIComponent(candidate);
             } catch {
+                console.warn('Could not decode Obsidian URI from query string:', candidate);
                 return candidate;
             }
         }
@@ -133,7 +135,7 @@
 
             setTimeout(() => {
                 window.location.href = queryLink;
-            }, 200);
+            }, REDIRECT_DELAY_MS);
         }
 
         function switchMode(mode) {
