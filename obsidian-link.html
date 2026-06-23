@@ -81,6 +81,61 @@
     <script>
         let currentMode = 'extract';
 
+        function getQueryObsidianLink() {
+            const rawQuery = window.location.search.startsWith('?')
+                ? window.location.search.slice(1)
+                : '';
+
+            if (!rawQuery) {
+                return null;
+            }
+
+            const normalizedQuery = rawQuery.replace(/&amp;/g, '&');
+            let candidate = null;
+
+            if (normalizedQuery.startsWith('obsidian://')) {
+                candidate = normalizedQuery;
+            } else {
+                const params = new URLSearchParams(normalizedQuery);
+                const keys = ['obsidian', 'link', 'url', 'uri'];
+
+                for (const key of keys) {
+                    const value = params.get(key);
+                    if (value && value.startsWith('obsidian://')) {
+                        candidate = value;
+                        break;
+                    }
+                }
+            }
+
+            if (!candidate || !candidate.startsWith('obsidian://')) {
+                return null;
+            }
+
+            try {
+                return decodeURIComponent(candidate);
+            } catch {
+                return candidate;
+            }
+        }
+
+        function openQueryObsidianLink() {
+            const queryLink = getQueryObsidianLink();
+
+            if (!queryLink) {
+                return;
+            }
+
+            const input = document.getElementById('input');
+            input.value = queryLink;
+            switchMode('convert');
+            processLinks();
+
+            setTimeout(() => {
+                window.location.href = queryLink;
+            }, 200);
+        }
+
         function switchMode(mode) {
             currentMode = mode;
             
@@ -134,6 +189,8 @@
                 output.innerHTML = '<div class="whitespace-pre-wrap">' + converted + '</div>';
             }
         }
+
+        openQueryObsidianLink();
     </script>
 </body>
 </html>
