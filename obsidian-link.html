@@ -80,6 +80,7 @@
 
     <script>
         let currentMode = 'extract';
+        // Small delay lets users see/cancel the redirect notice before navigating away.
         const REDIRECT_DELAY_MS = 1500;
         const REDIRECT_NOTICE_CLASS = 'mt-4 rounded-lg border border-olive-200 bg-olive-50 p-3 text-sm text-olive-700';
 
@@ -92,7 +93,7 @@
                 return null;
             }
 
-            // Support copied URLs where `&` is HTML-escaped as `&amp;`.
+            // Support copied links from HTML contexts where `&` may be entity-escaped as `&amp;`.
             const normalizedQuery = rawQuery.replace(/&amp;/g, '&');
             let candidate = null;
 
@@ -100,6 +101,7 @@
                 candidate = normalizedQuery;
             } else {
                 const params = new URLSearchParams(normalizedQuery);
+                // Accept common parameter names used by shared links and wrappers.
                 const keys = ['obsidian', 'link', 'url', 'uri'];
 
                 for (const key of keys) {
@@ -118,7 +120,7 @@
             try {
                 return normalizeObsidianLink(decodeURIComponent(candidate));
             } catch {
-                console.warn('Could not decode Obsidian URI from query string:', candidate);
+                console.warn('Malformed URI encoding in query Obsidian link:', candidate);
                 return normalizeObsidianLink(candidate);
             }
         }
@@ -169,6 +171,8 @@
             const output = document.getElementById('output');
             const notice = document.createElement('div');
             notice.className = REDIRECT_NOTICE_CLASS;
+            notice.setAttribute('role', 'status');
+            notice.setAttribute('aria-live', 'polite');
 
             const text = document.createElement('span');
             text.textContent = 'Opening in Obsidian...';
