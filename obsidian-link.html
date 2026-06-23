@@ -80,8 +80,8 @@
 
     <script>
         let currentMode = 'extract';
-        // Small delay lets users see/cancel the redirect notice before navigating away.
-        const REDIRECT_DELAY_MS = 1500;
+        // Delay gives users enough time to understand and cancel auto-redirect if needed.
+        const REDIRECT_DELAY_MS = 3000;
         const REDIRECT_NOTICE_CLASS = 'mt-4 rounded-lg border border-olive-200 bg-olive-50 p-3 text-sm text-olive-700';
 
         function getQueryObsidianLink() {
@@ -94,7 +94,10 @@
             }
 
             // Support copied links from HTML contexts where `&` may be entity-escaped as `&amp;`.
-            const normalizedQuery = rawQuery.replace(/&amp;/g, '&');
+            let normalizedQuery = rawQuery;
+            while (normalizedQuery.includes('&amp;')) {
+                normalizedQuery = normalizedQuery.replace(/&amp;/g, '&');
+            }
             let candidate = null;
 
             if (normalizedQuery.startsWith('obsidian://')) {
@@ -182,6 +185,7 @@
             cancelButton.type = 'button';
             cancelButton.className = 'ml-3 rounded border border-olive-300 px-2 py-1 text-xs hover:bg-white';
             cancelButton.textContent = 'Cancel';
+            cancelButton.setAttribute('aria-label', 'Cancel automatic redirect to Obsidian');
             notice.appendChild(cancelButton);
 
             output.appendChild(notice);
