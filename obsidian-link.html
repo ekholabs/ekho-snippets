@@ -81,7 +81,7 @@
     <script>
         let currentMode = 'extract';
         // Delay gives users enough time to understand and cancel auto-redirect if needed.
-        const REDIRECT_DELAY_MS = 3000;
+        const REDIRECT_DELAY_MS = 5000;
         // Prevent unbounded entity-decoding loops on malformed or hostile query input.
         const MAX_ENTITY_DECODE_ITERATIONS = 5;
         const REDIRECT_NOTICE_CLASS = 'mt-4 rounded-lg border border-olive-200 bg-olive-50 p-3 text-sm text-olive-700';
@@ -97,8 +97,10 @@
 
             // Support copied links from HTML contexts where `&` may be entity-escaped as `&amp;`.
             let normalizedQuery = rawQuery;
-            for (let i = 0; i < MAX_ENTITY_DECODE_ITERATIONS && normalizedQuery.includes('&amp;'); i++) {
+            let decodeIterations = 0;
+            while (normalizedQuery.includes('&amp;') && decodeIterations < MAX_ENTITY_DECODE_ITERATIONS) {
                 normalizedQuery = normalizedQuery.replaceAll('&amp;', '&');
+                decodeIterations += 1;
             }
             let candidate = null;
 
@@ -186,12 +188,12 @@
             notice.setAttribute('aria-live', 'polite');
 
             const text = document.createElement('span');
-            text.textContent = 'Opening in Obsidian...';
+            text.textContent = `Opening in Obsidian in ${REDIRECT_DELAY_MS / 1000} seconds...`;
             notice.appendChild(text);
 
             const cancelButton = document.createElement('button');
             cancelButton.type = 'button';
-            cancelButton.className = 'ml-3 rounded border border-olive-300 px-2 py-1 text-xs hover:bg-white';
+            cancelButton.className = 'ml-3 rounded border border-olive-300 px-2 py-1 text-xs hover:bg-olive-100';
             cancelButton.textContent = 'Cancel';
             cancelButton.setAttribute('aria-label', 'Cancel automatic redirect to Obsidian');
             notice.appendChild(cancelButton);
