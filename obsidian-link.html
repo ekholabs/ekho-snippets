@@ -81,6 +81,7 @@
     <script>
         let currentMode = 'extract';
         const REDIRECT_DELAY_MS = 1500;
+        const REDIRECT_NOTICE_CLASS = 'mt-4 rounded-lg border border-olive-200 bg-olive-50 p-3 text-sm text-olive-700';
 
         function getQueryObsidianLink() {
             const rawQuery = window.location.search.startsWith('?')
@@ -110,15 +111,46 @@
                 }
             }
 
-            if (!candidate || !candidate.startsWith('obsidian://')) {
+            if (!candidate) {
                 return null;
             }
 
             try {
-                return decodeURIComponent(candidate);
+                return normalizeObsidianLink(decodeURIComponent(candidate));
             } catch {
                 console.warn('Could not decode Obsidian URI from query string:', candidate);
-                return candidate;
+                return normalizeObsidianLink(candidate);
+            }
+        }
+
+        function normalizeObsidianLink(link) {
+            try {
+                const parsed = new URL(link);
+
+                if (parsed.protocol !== 'obsidian:') {
+                    return null;
+                }
+
+                if (parsed.hostname !== 'open') {
+                    return link;
+                }
+
+                const filteredParams = new URLSearchParams();
+                const allowedParams = ['vault', 'file'];
+
+                allowedParams.forEach((param) => {
+                    const value = parsed.searchParams.get(param);
+                    if (value) {
+                        filteredParams.set(param, value);
+                    }
+                });
+
+                const normalizedParams = filteredParams.toString();
+                return normalizedParams
+                    ? `obsidian://${parsed.hostname}?${normalizedParams}`
+                    : `obsidian://${parsed.hostname}`;
+            } catch {
+                return link.startsWith('obsidian://') ? link : null;
             }
         }
 
@@ -136,7 +168,7 @@
 
             const output = document.getElementById('output');
             const notice = document.createElement('div');
-            notice.className = 'mt-4 rounded-lg border border-olive-200 bg-olive-50 p-3 text-sm text-olive-700';
+            notice.className = REDIRECT_NOTICE_CLASS;
 
             const text = document.createElement('span');
             text.textContent = 'Opening in Obsidian...';
