@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Obsidian Link Converter - EKHO Snippets</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        olive: {
+                            50: '#f7f8f3',
+                            100: '#edeee6',
+                            200: '#d9dbd1',
+                            300: '#b8beab',
+                            400: '#949f80',
+                            500: '#7a845f',
+                            600: '#636a4e',
+                            700: '#525740',
+                            800: '#454835',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-olive-50 min-h-screen">
+    <div class="max-w-4xl mx-auto p-6">
+        <header class="mb-8">
+            <a href="index.html" class="inline-flex items-center text-olive-600 hover:text-olive-800 transition-colors mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                EKHO Snippets
+            </a>
+            <h1 class="text-3xl font-bold text-olive-700 mb-2">Obsidian Link Converter</h1>
+            <p class="text-olive-600">Extract and convert Obsidian URI links from text or messages.</p>
+        </header>
+
+        <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+            <div class="flex gap-4 mb-4" role="tablist">
+                <button 
+                    onclick="switchMode('extract')" 
+                    id="tab-extract"
+                    class="tab-button active bg-olive-100 text-olive-700 px-4 py-2 rounded-lg font-medium transition-colors"
+                >Extract Links</button>
+                <button 
+                    onclick="switchMode('convert')" 
+                    id="tab-convert"
+                    class="tab-button text-olive-600 px-4 py-2 rounded-lg font-medium hover:bg-olive-50 transition-colors"
+                >Convert Only</button>
+            </div>
+            <p id="helper-text" class="text-sm text-olive-500 mb-4">Paste any text containing Obsidian links. The tool will extract and convert them automatically.</p>
+            <textarea 
+                id="input" 
+                placeholder="Paste text with Obsidian links here..."
+                class="w-full h-32 p-3 border border-olive-200 rounded-lg focus:ring-2 focus:ring-olive-500 focus:border-olive-500 outline-none transition-all text-sm font-mono"
+            ></textarea>
+            
+            <button 
+                onclick="processLinks()"
+                id="process-btn"
+                class="mt-4 w-full bg-olive-600 hover:bg-olive-700 text-white font-medium py-3 px-4 rounded-lg transition-colors shadow-sm hover:shadow-md"
+            >
+                Extract and Convert Links
+            </button>
+        </div>
+
+        <div id="output" class="bg-white rounded-xl shadow-md p-6 min-h-[100px] border border-olive-100">
+            <p class="text-olive-400 text-center">Results will appear here...</p>
+        </div>
+
+        <footer class="text-center py-8 mt-12 border-t border-olive-200">
+            <p class="text-olive-400 text-sm">© EKHO Labs</p>
+        </footer>
+    </div>
+
+    <script>
+        let currentMode = 'extract';
+        // Delay gives users enough time to understand and cancel auto-redirect if needed.
+        const REDIRECT_DELAY_MS = 5;
+        // Prevent unbounded entity-decoding loops on malformed or hostile query input.
+        const MAX_ENTITY_DECODE_ITERATIONS = 5;
+        const REDIRECT_NOTICE_CLASS = 'mt-4 rounded-lg border border-olive-200 bg-olive-50 p-3 text-sm text-olive-700';
+
+        function getQueryObsidianLink() {
+            const rawQuery = window.location.search.startsWith('?')
+                ? window.location.search.slice(1)
+                : '';
+
+            if (!rawQuery) {
+                return null;
+            }
+
+            // Support copied links from HTML contexts where `&` may be entity-escaped as `&amp;`.
+            let normalizedQuery = rawQuery;
+            let decodeIterations = 0;
+            while (normalizedQuery.includes('&amp;') && decodeIterations < MAX_ENTITY_DECODE_ITERATIONS) {
+                normalizedQuery = normalizedQuery.replaceAll('&amp;', '&');
+                decodeIterations += 1;
+            }
+            let candidate = null;
+
+            if (normalizedQuery.startsWith('obsidian://')) {
+                candidate = normalizedQuery;
+            } else {
+                const params = new URLSearchParams(normalizedQuery);
+                // Accept common parameter names used by shared links and wrappers.
+                const keys = ['obsidian', 'link', 'url', 'uri'];
+
+                for (const key of keys) {
+                    const value = params.get(key);
+                    if (value && value.startsWith('obsidian://')) {
+                        candidate = value;
+                        break;
+                    }
+                }
+            }
+
+            if (!candidate) {
+                return null;
+            }
+
+            return normalizeObsidianLink(candidate);
+        }
+
+        function normalizeObsidianLink(link) {
+            try {
+                const parsed = new URL(link);
+
+                if (parsed.protocol !== 'obsidian:') {
+                    return null;
+                }
+
+                if (parsed.hostname !== 'open') {
+                    return link;
+                }
+
+                const allowedParams = ['vault', 'file'];
+
+                // Build the query manually with encodeURIComponent so spaces percent-encode
+                // as `%20`. URLSearchParams.toString() uses application/x-www-form-urlencoded
+                // serialization, which emits `+` for spaces and breaks Obsidian's file lookup.
+                const normalizedParams = allowedParams
+                    .map((param) => {
+                        const value = parsed.searchParams.get(param);
+                        return value
+                            ? `${param}=${encodeURIComponent(value)}`
+                            : null;
+                    })
+                    .filter(Boolean)
+                    .join('&');
+
+                return normalizedParams
+                    ? `obsidian://${parsed.hostname}?${normalizedParams}`
+                    : `obsidian://${parsed.hostname}`;
+            } catch {
+                console.warn('Malformed URI encoding in query Obsidian link.');
+                return link.startsWith('obsidian://') ? link : null;
+            }
+        }
+
+        function openQueryObsidianLink() {
+            const queryLink = getQueryObsidianLink();
+
+            if (!queryLink) {
+                return;
+            }
+
+            const input = document.getElementById('input');
+            if (!input) {
+                console.warn('Obsidian link input element not found.');
+                return;
+            }
+
+            input.value = queryLink;
+            switchMode('convert');
+            processLinks();
+
+            const output = document.getElementById('output');
+            if (!output) {
+                console.warn('Obsidian link output element not found.');
+                return;
+            }
+
+            const notice = document.createElement('div');
+            notice.className = REDIRECT_NOTICE_CLASS;
+            notice.setAttribute('role', 'status');
+            notice.setAttribute('aria-live', 'polite');
+
+            const text = document.createElement('span');
+            text.textContent = `Opening in Obsidian in ${REDIRECT_DELAY_MS / 1000} seconds...`;
+            notice.appendChild(text);
+
+            const cancelButton = document.createElement('button');
+            cancelButton.type = 'button';
+            cancelButton.className = 'ml-3 rounded border border-olive-300 px-2 py-1 text-xs hover:bg-olive-100';
+            cancelButton.textContent = 'Cancel';
+            cancelButton.setAttribute('aria-label', 'Cancel automatic redirect to Obsidian');
+            notice.appendChild(cancelButton);
+
+            output.appendChild(notice);
+
+            const redirectTimeout = setTimeout(() => {
+                window.location.href = queryLink;
+            }, REDIRECT_DELAY_MS);
+
+            cancelButton.addEventListener('click', () => {
+                clearTimeout(redirectTimeout);
+                notice.remove();
+            });
+        }
+
+        function switchMode(mode) {
+            currentMode = mode;
+            
+            document.getElementById('tab-extract').className = mode === 'extract' 
+                ? 'tab-button active bg-olive-100 text-olive-700 px-4 py-2 rounded-lg font-medium transition-colors' 
+                : 'tab-button text-olive-600 px-4 py-2 rounded-lg font-medium hover:bg-olive-50 transition-colors';
+            
+            document.getElementById('tab-convert').className = mode === 'convert' 
+                ? 'tab-button active bg-olive-100 text-olive-700 px-4 py-2 rounded-lg font-medium transition-colors' 
+                : 'tab-button text-olive-600 px-4 py-2 rounded-lg font-medium hover:bg-olive-50 transition-colors';
+
+            const helperText = document.getElementById('helper-text');
+            const processBtn = document.getElementById('process-btn');
+            
+            if (mode === 'extract') {
+                helperText.textContent = 'Paste any text containing Obsidian links. The tool will extract and convert them automatically.';
+                processBtn.textContent = 'Extract and Convert Links';
+            } else {
+                helperText.textContent = 'Paste your Obsidian URI links below (e.g., obsidian://open?vault=MyVault&file=Note).';
+                processBtn.textContent = 'Convert to Clickable Links';
+            }
+        }
+
+        function processLinks() {
+            const input = document.getElementById('input').value;
+            const output = document.getElementById('output');
+
+            if (!input.trim()) {
+                output.innerHTML = '<p class="text-olive-400 text-center">Results will appear here...</p>';
+                return;
+            }
+
+            const linkRegex = /(obsidian:\/\/[^\s\n\r]+)/g;
+            const links = input.match(linkRegex);
+
+            if (!links || links.length === 0) {
+                output.innerHTML = '<p class="text-olive-400 text-center"><em>No Obsidian links found.</em></p>';
+                return;
+            }
+
+            if (currentMode === 'extract') {
+                const converted = links.map(link => 
+                    '<a href="' + link + '" target="_blank" class="block text-olive-600 hover:text-olive-800 underline break-all py-1">' + link + '</a>'
+                ).join('');
+                output.innerHTML = '<div class="space-y-2">' + converted + '</div>';
+            } else {
+                const converted = input.replace(
+                    linkRegex,
+                    '<a href="$1" target="_blank" class="text-olive-600 hover:text-olive-800 underline break-all">$1</a>'
+                );
+                output.innerHTML = '<div class="whitespace-pre-wrap">' + converted + '</div>';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', openQueryObsidianLink);
+    </script>
+</body>
+</html>
