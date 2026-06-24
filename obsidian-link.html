@@ -139,17 +139,21 @@
                     return link;
                 }
 
-                const filteredParams = new URLSearchParams();
                 const allowedParams = ['vault', 'file'];
 
-                allowedParams.forEach((param) => {
-                    const value = parsed.searchParams.get(param);
-                    if (value) {
-                        filteredParams.set(param, value);
-                    }
-                });
+                // Build the query manually with encodeURIComponent so spaces encode as
+                // `%20` (per RFC 3986). URLSearchParams.toString() uses form-urlencoding,
+                // which emits `+` for spaces and breaks Obsidian's file lookup.
+                const normalizedParams = allowedParams
+                    .map((param) => {
+                        const value = parsed.searchParams.get(param);
+                        return value
+                            ? `${param}=${encodeURIComponent(value)}`
+                            : null;
+                    })
+                    .filter(Boolean)
+                    .join('&');
 
-                const normalizedParams = filteredParams.toString();
                 return normalizedParams
                     ? `obsidian://${parsed.hostname}?${normalizedParams}`
                     : `obsidian://${parsed.hostname}`;
