@@ -141,9 +141,9 @@
 
                 const allowedParams = ['vault', 'file'];
 
-                // Build the query manually with encodeURIComponent so spaces encode as
-                // `%20` (per RFC 3986). URLSearchParams.toString() uses form-urlencoding,
-                // which emits `+` for spaces and breaks Obsidian's file lookup.
+                // Build the query manually with encodeURIComponent so spaces percent-encode
+                // as `%20`. URLSearchParams.toString() uses application/x-www-form-urlencoded
+                // serialization, which emits `+` for spaces and breaks Obsidian's file lookup.
                 const normalizedParams = allowedParams
                     .map((param) => {
                         const value = parsed.searchParams.get(param);
